@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  READER
+  ADMIN
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+  REPORTED
+}
+
+enum ReactionType {
+  LIKE
+  THOUGHTFUL
+  USEFUL
+  INSPIRING
+  RELATABLE
+}
+
+enum GuestbookStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+model User {
+  id               String           @id @default(uuid()) @db.Uuid
+  email            String           @unique
+  name             String?
+  username         String?          @unique
+  role             UserRole         @default(READER)
+  bio              String?
+  avatarUrl        String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  posts            Post[]
+  comments         Comment[]
+  reactions        Reaction[]
+  savedPosts       SavedPost[]
+  readingHistory   ReadingHistory[]
+  guestbookEntries GuestbookEntry[]
+
+  @@index([role])
+}
+
+model Post {
+  id                 String           @id @default(uuid()) @db.Uuid
+  slug               String           @unique
+  title              String
+  shortDescription   String
+  content            String
+  coverImageUrl      String?
+  status             PostStatus       @default(DRAFT)
+  featured           Boolean          @default(false)
+  pinned             Boolean          @default(false)
+  readingTimeMinutes Int              @default(1)
+  publishedAt        DateTime?
+  scheduledFor       DateTime?
+  authorNote         String?
+  behindThePost      String?
+  metaTitle          String?
+  metaDescription    String?
+  ogImageUrl         String?
+  viewCount          Int              @default(0)
+  authorId           String           @db.Uuid
+  categoryId         String           @db.Uuid
+  seriesId           String?          @db.Uuid
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  author             User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category           Category         @relation(fields: [categoryId], references: [id])
+  series             Series?          @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  tags               PostTag[]
+  comments           Comment[]
+  reactions          Reaction[]
+  savedBy            SavedPost[]
+  readingHistory     ReadingHistory[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([seriesId])
+  @@index([authorId])
+}
+
+model Category {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  posts       Post[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Tag {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique
+  slug      String    @unique
+  posts     PostTag[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model PostTag {
+  postId String @db.Uuid
+  tagId  String @db.Uuid
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+model Series {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  slug        String   @unique
+  description String?
+  posts       Post[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Comment {
+  id        String        @id @default(uuid()) @db.Uuid
+  content   String
+  status    CommentStatus @default(PENDING)
+  pinned    Boolean       @default(false)
+  postId    String        @db.Uuid
+  userId    String        @db.Uuid
+  parentId  String?       @db.Uuid
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]     @relation("CommentReplies")
+
+  @@index([postId, status])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model Reaction {
+  id        String       @id @default(uuid()) @db.Uuid
+  type      ReactionType
+  postId    String       @db.Uuid
+  userId    String       @db.Uuid
+  createdAt DateTime     @default(now())
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId, type])
+  @@index([userId])
+}
+
+model SavedPost {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+model ReadingHistory {
+  id              String    @id @default(uuid()) @db.Uuid
+  postId          String    @db.Uuid
+  userId          String    @db.Uuid
+  progressPercent Int       @default(0)
+  lastReadAt      DateTime  @default(now())
+  completedAt     DateTime?
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId, lastReadAt])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GuestbookEntry {
+  id        String          @id @default(uuid()) @db.Uuid
+  message   String
+  status    GuestbookStatus @default(PENDING)
+  userId    String          @db.Uuid
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
