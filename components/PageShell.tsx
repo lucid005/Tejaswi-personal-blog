@@ -1,50 +1,59 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import NewsletterSignup from "@/components/newsletter/NewsletterSignup";
 
 type PageShellProps = {
   children: React.ReactNode;
 };
 
+const footerLinks = [
+  { label: "Latest", href: "/" },
+  { label: "Archive", href: "/blog" },
+  { label: "Series", href: "/series" },
+  { label: "About", href: "/about" },
+  { label: "Search", href: "/search" },
+];
+
 export default function PageShell({ children }: PageShellProps) {
   return (
-    <main className="min-h-screen bg-[#f6efe6] pt-[108px] text-[#191817] max-[900px]:pt-[92px] max-[640px]:pt-[82px]">
+    <main className="flex min-h-screen flex-col bg-[var(--color-paper)] text-[var(--color-ink)]">
       <Navbar />
-      {children}
-      <section
-        className="border-t border-[#d9cec1] bg-[#f6efe6] px-6 py-[clamp(64px,8vw,96px)] max-[640px]:px-4"
-        aria-labelledby="signup-title"
-      >
-        <div className="mx-auto grid w-[min(100%,920px)] justify-items-center text-center">
-          <h2
-            className="font-fraunces text-[clamp(1.8rem,3vw,2.55rem)] font-medium leading-[1.15] tracking-normal"
-            id="signup-title"
-          >
-            Want Updates on What&apos;s New at Tejaswi Blog?
-          </h2>
-          <NewsletterSignup />
-        </div>
-      </section>
-      <footer className="border-t border-[#d9cec1] bg-[#f1e8dc] px-6 py-12 max-[640px]:px-4">
-        <div className="mx-auto flex w-[min(100%,1250px)] items-center justify-between gap-6 max-[700px]:flex-col max-[700px]:items-start">
-          <p className="font-fraunces text-2xl font-medium">Tejaswi</p>
-          <nav
-            className="flex flex-wrap gap-x-5 gap-y-2 text-[0.92rem] font-bold text-[#5f594f]"
-            aria-label="Footer"
-          >
-            <Link className="hover:text-[#191817]" href="/">
-              Home
-            </Link>
-            <Link className="hover:text-[#191817]" href="/blog">
-              Blog
-            </Link>
-            <Link className="hover:text-[#191817]" href="/series">
-              Series
-            </Link>
-            <Link className="hover:text-[#191817]" href="/search">
-              Search
-            </Link>
-          </nav>
+      <div className="flex-1">{children}</div>
+      <footer className="border-t border-[var(--color-hairline)] px-6 py-10 max-[640px]:px-4">
+        <div className="mx-auto grid w-[min(100%,1200px)] gap-6">
+          <div className="grid grid-cols-[1fr_auto] items-end gap-6 max-[640px]:grid-cols-1">
+            <div>
+              <Link
+                href="/"
+                className="font-[family-name:var(--font-newsreader)] text-2xl leading-none text-[var(--color-ink)]"
+              >
+                Tejaswi<span className="text-[var(--color-accent)]">.</span>
+              </Link>
+              <p className="mt-3 max-w-[38ch] text-sm leading-6 text-[var(--color-muted)]">
+                A personal archive of essays, reading notes, and small
+                observations. Written slowly, kept quiet.
+              </p>
+            </div>
+            <nav
+              aria-label="Footer"
+              className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--color-muted)]"
+            >
+              {footerLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="transition hover:text-[var(--color-ink)]"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-hairline)] pt-6 text-xs text-[var(--color-subtle)]">
+            <p>© {new Date().getFullYear()} Tejaswi. Written by hand.</p>
+            <p className="font-[family-name:var(--font-geist-mono)] uppercase tracking-[0.14em]">
+              RSS coming soon
+            </p>
+          </div>
         </div>
       </footer>
     </main>

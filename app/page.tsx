@@ -2,7 +2,6 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import PostCard from "@/components/PostCard";
 import PostGrid from "@/components/PostGrid";
-import SectionHeading from "@/components/SectionHeading";
 import {
   getCategoriesWithPosts,
   getFeaturedPost,
@@ -25,100 +24,122 @@ export default async function Page() {
     ? posts.filter((post) => post.id !== heroPost.id)
     : posts;
 
+  const nowLabel = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
   return (
     <PageShell>
-      <section className="px-6 pb-[clamp(44px,7vw,92px)] pt-[clamp(24px,5vw,58px)] max-[640px]:px-4">
-        <div className="mx-auto w-[min(100%,1250px)]">
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(260px,0.38fr)] gap-[clamp(28px,5vw,76px)] border-t border-[#d8ccbd] pt-[clamp(34px,5vw,72px)] max-[900px]:grid-cols-1">
-            <SectionHeading
-              eyebrow="Personal archive"
-              title="Quiet writing for slow attention."
-              description="Essays, project notes, small observations, and behind-the-scenes thinking from Tejaswi."
-            />
-            <aside className="self-end border-l border-[#d8ccbd] pl-6 text-[0.95rem] font-semibold leading-7 text-[#625c55] max-[900px]:border-l-0 max-[900px]:border-t max-[900px]:pl-0 max-[900px]:pt-5">
-              <p>
-                Read freely. Save, react, and build a personal reading memory
-                later when authentication is added.
-              </p>
-              <Link
-                className="mt-5 inline-block border-b border-[#717a51] pb-1 text-sm font-extrabold uppercase text-[#4f5740] transition hover:text-[#191817]"
-                href="/blog"
-              >
-                Browse all posts
-              </Link>
-            </aside>
+      <section
+        aria-label="Masthead"
+        className="border-b border-[var(--color-hairline)] px-6 max-[640px]:px-4"
+      >
+        <div className="mx-auto grid w-[min(100%,1200px)] grid-cols-[1fr_auto] items-end gap-4 py-8 max-[640px]:grid-cols-1 max-[640px]:py-6">
+          <div>
+            <p className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-subtle)]">
+              A personal archive
+            </p>
+            <h1 className="mt-3 max-w-[24ch] font-[family-name:var(--font-newsreader)] text-[clamp(1.75rem,3vw,2.6rem)] font-normal leading-[1.1] tracking-[-0.015em] text-[var(--color-ink)]">
+              Notes on attention, work, and slow mornings.
+            </h1>
           </div>
+          <p className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-subtle)] max-[640px]:mt-2">
+            {nowLabel} · {posts.length} pieces
+          </p>
         </div>
       </section>
 
-      <section className="px-6 pb-[clamp(58px,8vw,110px)] max-[640px]:px-4">
-        <div className="mx-auto w-[min(100%,1250px)]">
-          {heroPost ? (
+      {heroPost ? (
+        <section className="border-b border-[var(--color-hairline)] px-6 max-[640px]:px-4">
+          <div className="mx-auto w-[min(100%,1200px)]">
             <PostCard post={heroPost} priority variant="feature" />
-          ) : (
-            <PostGrid posts={[]} />
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      ) : null}
 
-      <section className="px-6 pb-[clamp(72px,10vw,140px)] max-[640px]:px-4">
-        <div className="mx-auto w-[min(100%,1250px)]">
-          <div className="mb-7 flex items-end justify-between gap-6 max-[700px]:block">
-            <div>
-              <p className="mb-2 text-[0.78rem] font-extrabold uppercase text-[#717a51]">
-                Recently publisheds
-              </p>
-              <h2 className="font-fraunces text-[clamp(2rem,4vw,4.2rem)] font-medium leading-none">
-                Latest from the archive
-              </h2>
-            </div>
+      <section className="px-6 py-[clamp(56px,8vw,110px)] max-[640px]:px-4">
+        <div className="mx-auto w-[min(100%,1200px)]">
+          <div className="mb-10 flex items-end justify-between gap-4 max-[640px]:flex-col max-[640px]:items-start">
+            <h2 className="font-[family-name:var(--font-newsreader)] text-[clamp(1.75rem,3vw,2.4rem)] font-normal leading-none tracking-[-0.015em] text-[var(--color-ink)]">
+              Recent writing
+            </h2>
             <Link
-              className="text-sm font-extrabold uppercase text-[#4f5740] underline-offset-4 hover:underline max-[700px]:mt-4 max-[700px]:inline-block"
               href="/blog"
+              className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
             >
-              View all
+              View the full archive →
             </Link>
           </div>
-          <PostGrid posts={remainingPosts} />
+          <PostGrid
+            posts={remainingPosts}
+            emptyTitle="No essays yet"
+            emptyDescription="Recent writing will appear here as it is published."
+          />
         </div>
       </section>
 
-      <section className="border-y border-[#d9cec1] bg-[#f1e8dc] px-6 py-[clamp(52px,7vw,90px)] max-[640px]:px-4">
-        <div className="mx-auto grid w-[min(100%,1250px)] grid-cols-[0.75fr_1fr] gap-[clamp(30px,5vw,72px)] max-[900px]:grid-cols-1">
+      <section className="border-t border-[var(--color-hairline)] bg-[var(--color-surface)] px-6 py-[clamp(56px,7vw,96px)] max-[640px]:px-4">
+        <div className="mx-auto grid w-[min(100%,1200px)] grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-[clamp(32px,5vw,72px)] max-[900px]:grid-cols-1">
           <div>
-            <p className="mb-2 text-[0.78rem] font-extrabold uppercase text-[#717a51]">
-              Browse
+            <p className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-accent)]">
+              Wander
             </p>
-            <h2 className="font-fraunces text-[clamp(2rem,4vw,4.2rem)] font-medium leading-none">
-              Categories and journeys
+            <h2 className="mt-4 max-w-[20ch] font-[family-name:var(--font-newsreader)] text-[clamp(1.9rem,3.2vw,2.8rem)] font-normal leading-[1.05] tracking-[-0.015em] text-[var(--color-ink)]">
+              By category, or as a longer journey.
             </h2>
+            <p className="mt-5 max-w-[42ch] text-[15px] leading-[1.65] text-[var(--color-muted)]">
+              Pieces group naturally by topic. When several belong to the same
+              thread of thinking, they become a series you can read slowly.
+            </p>
           </div>
           <div className="grid gap-8">
-            <div className="flex flex-wrap gap-2.5">
-              {categories.map((category) => (
-                <Link
-                  className="border border-[#c6b9a8] px-3 py-2 text-sm font-bold text-[#565047] transition hover:border-[#717a51] hover:text-[#191817]"
-                  href={`/category/${category.slug}`}
-                  key={category.id}
-                >
-                  {category.name} ({category.posts.length})
-                </Link>
-              ))}
-            </div>
-            <div className="grid gap-3 border-t border-[#d8ccbd] pt-6">
-              {seriesList.length > 0 ? (
-                seriesList.map((series) => (
+            <div>
+              <p className="mb-4 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-subtle)]">
+                Categories
+              </p>
+              <div className="flex flex-wrap gap-x-6 gap-y-3">
+                {categories.map((category) => (
                   <Link
-                    className="grid grid-cols-[1fr_auto] gap-4 py-2 font-semibold text-[#625c55] transition hover:text-[#191817] max-[640px]:grid-cols-1"
-                    href={`/series/${series.slug}`}
-                    key={series.id}
+                    key={category.id}
+                    href={`/category/${category.slug}`}
+                    className="group flex items-baseline gap-2 text-[var(--color-ink)] transition hover:text-[var(--color-accent)]"
                   >
-                    <span>{series.title}</span>
-                    <span>{series.posts.length} posts</span>
+                    <span className="font-[family-name:var(--font-newsreader)] text-xl leading-none">
+                      {category.name}
+                    </span>
+                    <span className="font-[family-name:var(--font-geist-mono)] text-[11px] text-[var(--color-subtle)]">
+                      {category.posts.length}
+                    </span>
                   </Link>
-                ))
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-4 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-subtle)]">
+                Series
+              </p>
+              {seriesList.length > 0 ? (
+                <ul className="grid gap-2">
+                  {seriesList.map((series) => (
+                    <li key={series.id}>
+                      <Link
+                        href={`/series/${series.slug}`}
+                        className="group grid grid-cols-[1fr_auto] items-baseline gap-4 border-t border-[var(--color-hairline)] py-3 text-[var(--color-ink)] transition hover:text-[var(--color-accent)]"
+                      >
+                        <span className="font-[family-name:var(--font-newsreader)] text-lg leading-tight">
+                          {series.title}
+                        </span>
+                        <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-subtle)]">
+                          {series.posts.length} pieces
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <p className="font-semibold text-[#625c55]">
+                <p className="text-sm text-[var(--color-muted)]">
                   Series will appear here as connected posts are published.
                 </p>
               )}

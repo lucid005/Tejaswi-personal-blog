@@ -7,24 +7,28 @@ type PostMetaProps = {
 };
 
 export default function PostMeta({ post, compact = false }: PostMetaProps) {
+  const size = compact ? "text-[11px]" : "text-xs";
+
   return (
     <div
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[#706a63] ${
-        compact ? "text-[0.78rem]" : "text-[0.86rem]"
-      }`}
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1 font-[family-name:var(--font-geist-mono)] ${size} uppercase tracking-[0.14em] text-[var(--color-muted)]`}
     >
       <Link
-        className="font-bold text-[#4f5740] transition hover:text-[#191817]"
         href={`/category/${post.category.slug}`}
+        className="text-[var(--color-accent)] transition hover:text-[var(--color-ink)]"
       >
         {post.category.name}
       </Link>
-      <span aria-hidden="true">/</span>
+      <span aria-hidden="true" className="text-[var(--color-hairline)]">
+        /
+      </span>
       <time dateTime={post.publishedAt?.toISOString()}>
         {formatPostDate(post.publishedAt)}
       </time>
-      <span aria-hidden="true">/</span>
-      <span>{post.readingTimeMinutes} min read</span>
+      <span aria-hidden="true" className="text-[var(--color-hairline)]">
+        /
+      </span>
+      <span>{post.readingTimeMinutes} min</span>
     </div>
   );
 }

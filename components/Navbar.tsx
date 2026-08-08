@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { FiSearch, FiX } from "react-icons/fi";
-import { RxHamburgerMenu } from "react-icons/rx";
+import { PiListBold, PiMagnifyingGlass, PiX } from "react-icons/pi";
 
 const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Articles", href: "/blog" },
-  { label: "Blogs", href: "/blog" },
+  { label: "Latest", href: "/" },
+  { label: "Archive", href: "/blog" },
   { label: "Series", href: "/series" },
-  { label: "About Me", href: null },
+  { label: "About", href: "/about" },
 ];
 
 type SearchResult = {
@@ -22,6 +21,7 @@ type SearchResult = {
 };
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,31 +31,22 @@ export default function Navbar() {
   const visibleSearchResults = canSearch ? searchResults : [];
 
   useEffect(() => {
-    if (!canSearch) {
-      return;
-    }
+    if (!canSearch) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
       setIsSearching(true);
-
       try {
         const response = await fetch(
           `/api/search?q=${encodeURIComponent(searchQuery.trim())}`,
-          {
-            signal: controller.signal,
-          },
+          { signal: controller.signal },
         );
         const data = (await response.json()) as { posts: SearchResult[] };
         setSearchResults(data.posts);
       } catch {
-        if (!controller.signal.aborted) {
-          setSearchResults([]);
-        }
+        if (!controller.signal.aborted) setSearchResults([]);
       } finally {
-        if (!controller.signal.aborted) {
-          setIsSearching(false);
-        }
+        if (!controller.signal.aborted) setIsSearching(false);
       }
     }, 220);
 
@@ -65,106 +56,136 @@ export default function Navbar() {
     };
   }, [canSearch, searchQuery]);
 
-  function toggleMenu() {
-    setIsSearchOpen(false);
-    setIsMenuOpen((open) => !open);
-  }
-
-  function toggleSearch() {
-    setIsMenuOpen(false);
-    setIsSearchOpen((open) => !open);
-  }
-
-  function closeOverlay() {
+  useEffect(() => {
     setIsMenuOpen(false);
     setIsSearchOpen(false);
-  }
+  }, [pathname]);
+
+  useEffect(() => {
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+        setIsSearchOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
-    if (!searchQuery.trim()) {
-      event.preventDefault();
-    }
+    if (!searchQuery.trim()) event.preventDefault();
   }
 
-  const isOverlayOpen = isMenuOpen || isSearchOpen;
+  function isActive(href: string) {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 grid min-h-[108px] grid-cols-[56px_1fr_56px] items-center bg-[#f6efe6] px-[clamp(22px,4vw,52px)] py-5 max-[900px]:min-h-[92px] max-[900px]:grid-cols-[46px_1fr_46px] max-[640px]:min-h-[82px] max-[640px]:px-3.5">
-        <button
-          className="grid h-[42px] w-[42px] cursor-pointer place-items-center rounded-full border-0 bg-transparent text-[#191817] transition hover:bg-black/[0.07] active:translate-y-px max-[640px]:h-10 max-[640px]:w-10 [&_svg]:h-[26px] [&_svg]:w-[26px] [&_svg]:stroke-[1.8] max-[640px]:[&_svg]:h-[22px] max-[640px]:[&_svg]:w-[22px]"
-          type="button"
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isMenuOpen}
-          onClick={toggleMenu}
-        >
-          <RxHamburgerMenu aria-hidden="true" />
-        </button>
+      <header className="sticky top-0 z-50 border-b border-[var(--color-hairline)] bg-[var(--color-paper)]/92 backdrop-blur">
+        <div className="mx-auto grid h-[68px] w-[min(100%,1200px)] grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 max-[640px]:h-[60px] max-[640px]:px-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMenuOpen}
+              onClick={() => {
+                setIsSearchOpen(false);
+                setIsMenuOpen((v) => !v);
+              }}
+              className="grid h-10 w-10 place-items-center rounded-full text-[var(--color-ink)] transition hover:bg-[var(--color-surface)] active:translate-y-px min-[900px]:hidden"
+            >
+              {isMenuOpen ? (
+                <PiX aria-hidden="true" className="h-5 w-5" />
+              ) : (
+                <PiListBold aria-hidden="true" className="h-5 w-5" />
+              )}
+            </button>
 
-        <Link
-          className="justify-self-center font-fraunces text-[clamp(3.35rem,6.2vw,5.8rem)] font-medium leading-[0.95] tracking-normal max-[640px]:text-[clamp(2.8rem,13vw,4.1rem)]"
-          href="/"
-          aria-label="Tejaswi home"
-          onClick={() => {
-            setIsMenuOpen(false);
-            setIsSearchOpen(false);
-          }}
-        >
-          Tejaswi
-        </Link>
-
-        <button
-          className="grid h-[42px] w-[42px] cursor-pointer place-items-center rounded-full border-0 bg-transparent text-[#191817] transition hover:bg-black/[0.07] active:translate-y-px max-[640px]:h-10 max-[640px]:w-10 [&_svg]:h-[26px] [&_svg]:w-[26px] [&_svg]:stroke-[1.8] max-[640px]:[&_svg]:h-[22px] max-[640px]:[&_svg]:w-[22px]"
-          type="button"
-          aria-label={isOverlayOpen ? "Close overlay" : "Open search"}
-          aria-expanded={isSearchOpen}
-          onClick={isOverlayOpen ? closeOverlay : toggleSearch}
-        >
-          {isOverlayOpen ? (
-            <FiX aria-hidden="true" />
-          ) : (
-            <FiSearch aria-hidden="true" />
-          )}
-        </button>
-      </header>
-
-      <div
-        className={`fixed inset-x-0 top-[108px] z-40 bg-[#f6efe6] transition duration-300 ease-out max-[900px]:top-[92px] max-[640px]:top-[82px] ${
-          isMenuOpen
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none -translate-y-full opacity-0"
-        }`}
-      >
-        <nav
-          className="grid min-h-[390px] place-items-center px-6 py-12 max-[640px]:min-h-[340px]"
-          aria-label="Primary"
-        >
-          <div className="grid justify-items-center gap-3">
-            {navItems.map((item) => (
-              item.href ? (
+            <nav
+              aria-label="Primary"
+              className="hidden items-center gap-7 text-[13px] text-[var(--color-muted)] min-[900px]:flex"
+            >
+              {navItems.map((item) => (
                 <Link
-                  key={item.href + item.label}
-                  className="font-fraunces text-[clamp(2.8rem,6vw,4.2rem)] font-medium leading-none text-[#191817] transition hover:text-[#717a51]"
+                  key={item.href}
                   href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
+                  className={`relative py-2 transition hover:text-[var(--color-ink)] ${
+                    isActive(item.href)
+                      ? "text-[var(--color-ink)] after:absolute after:inset-x-0 after:-bottom-[1px] after:h-px after:bg-[var(--color-ink)]"
+                      : ""
+                  }`}
                 >
                   {item.label}
                 </Link>
-              ) : (
-                <span
-                  className="font-fraunces text-[clamp(2.8rem,6vw,4.2rem)] font-medium leading-none text-[#8d867c]"
-                  key={item.label}
-                >
-                  {item.label}
-                </span>
-              )
-            ))}
+              ))}
+            </nav>
           </div>
+
+          <Link
+            href="/"
+            aria-label="Tejaswi home"
+            className="justify-self-center font-[family-name:var(--font-newsreader)] text-[26px] leading-none tracking-[-0.01em] text-[var(--color-ink)] max-[640px]:text-[22px]"
+          >
+            Tejaswi<span className="text-[var(--color-accent)]">.</span>
+          </Link>
+
+          <div className="flex items-center justify-end gap-2">
+            <Link
+              href="/login"
+              className="hidden text-[13px] text-[var(--color-muted)] transition hover:text-[var(--color-ink)] min-[640px]:inline"
+            >
+              Sign in
+            </Link>
+            <button
+              type="button"
+              aria-label={isSearchOpen ? "Close search" : "Open search"}
+              aria-expanded={isSearchOpen}
+              onClick={() => {
+                setIsMenuOpen(false);
+                setIsSearchOpen((v) => !v);
+              }}
+              className="grid h-10 w-10 place-items-center rounded-full text-[var(--color-ink)] transition hover:bg-[var(--color-surface)] active:translate-y-px"
+            >
+              {isSearchOpen ? (
+                <PiX aria-hidden="true" className="h-5 w-5" />
+              ) : (
+                <PiMagnifyingGlass aria-hidden="true" className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div
+        className={`fixed inset-x-0 top-[68px] z-40 border-b border-[var(--color-hairline)] bg-[var(--color-paper)] transition duration-200 ease-out max-[640px]:top-[60px] ${
+          isMenuOpen
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-2 opacity-0"
+        }`}
+      >
+        <nav aria-label="Mobile" className="mx-auto grid w-[min(100%,1200px)] gap-1 px-6 py-6">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="border-b border-[var(--color-hairline)] py-3 font-[family-name:var(--font-newsreader)] text-3xl tracking-[-0.01em] text-[var(--color-ink)] transition hover:text-[var(--color-accent)]"
+            >
+              {item.label}
+            </Link>
+          ))}
+          <Link
+            href="/login"
+            className="border-b border-[var(--color-hairline)] py-3 text-sm text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
+          >
+            Sign in
+          </Link>
         </nav>
       </div>
 
       <div
-        className={`fixed inset-0 z-30 bg-[#f6efe6] transition duration-300 ease-out ${
+        className={`fixed inset-0 top-[68px] z-40 bg-[var(--color-paper)]/98 backdrop-blur transition duration-200 ease-out max-[640px]:top-[60px] ${
           isSearchOpen
             ? "opacity-100"
             : "pointer-events-none opacity-0"
@@ -172,67 +193,61 @@ export default function Navbar() {
       >
         <form
           action="/search"
-          className="grid min-h-screen place-items-center px-6 pt-[108px] max-[900px]:pt-[92px] max-[640px]:pt-[82px]"
           onSubmit={submitSearch}
           role="search"
+          className="mx-auto grid w-[min(100%,720px)] gap-8 px-6 pt-14 max-[640px]:px-4 max-[640px]:pt-8"
         >
-          <div className="w-[min(100%,680px)] text-center">
-            <label
-              className="mb-6 block font-fraunces text-[clamp(3.2rem,7vw,5.4rem)] font-medium leading-none text-[#69645e]"
-              htmlFor="site-search"
-            >
-              Search
-            </label>
-            <input
-              className="min-h-[58px] w-full border-0 border-b border-[#a89f93] bg-transparent px-2 text-center font-fraunces text-[clamp(1.8rem,4vw,3rem)] text-[#191817] outline-none placeholder:text-[#9a938b] focus:border-[#717a51]"
-              id="site-search"
-              name="q"
-              type="search"
-              placeholder="Type here"
-              value={searchQuery}
-              onChange={(event) => {
-                const value = event.target.value;
-                setSearchQuery(value);
-
-                if (value.trim().length < 2) {
-                  setSearchResults([]);
-                  setIsSearching(false);
-                }
-              }}
-              autoFocus={isSearchOpen}
-            />
-            <div className="mx-auto mt-8 grid max-w-[620px] gap-3 text-left">
-              {isSearching ? (
-                <p className="text-center text-sm font-black uppercase tracking-[0.16em] text-[#717a51]">
-                  Searching
+          <label
+            htmlFor="site-search"
+            className="text-xs uppercase tracking-[0.18em] text-[var(--color-subtle)]"
+          >
+            Search the archive
+          </label>
+          <input
+            id="site-search"
+            name="q"
+            type="search"
+            placeholder="Essays, notes, tags…"
+            value={searchQuery}
+            onChange={(event) => {
+              const value = event.target.value;
+              setSearchQuery(value);
+              if (value.trim().length < 2) {
+                setSearchResults([]);
+                setIsSearching(false);
+              }
+            }}
+            autoFocus={isSearchOpen}
+            className="w-full border-0 border-b border-[var(--color-ink)] bg-transparent pb-3 font-[family-name:var(--font-newsreader)] text-[clamp(1.8rem,4vw,2.6rem)] tracking-[-0.01em] text-[var(--color-ink)] outline-none placeholder:text-[var(--color-subtle)]"
+          />
+          <div className="grid gap-1">
+            {isSearching ? (
+              <p className="text-xs text-[var(--color-muted)]">Searching…</p>
+            ) : null}
+            {visibleSearchResults.map((post) => (
+              <Link
+                key={post.id}
+                href={`/blog/${post.slug}`}
+                className="grid gap-1 border-b border-[var(--color-hairline)] py-4 transition hover:bg-[var(--color-surface)]/60"
+              >
+                <p className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                  {post.category}
                 </p>
-              ) : null}
-              {visibleSearchResults.map((post) => (
-                <Link
-                  className="block border-t border-[#d9cec1] px-1 py-3 transition hover:text-[#596345]"
-                  href={`/blog/${post.slug}`}
-                  key={post.id}
-                  onClick={closeOverlay}
-                >
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#717a51]">
-                    {post.category}
-                  </p>
-                  <h2 className="mt-1 font-fraunces text-2xl font-medium">
-                    {post.title}
-                  </h2>
-                  <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-[#625c55]">
-                    {post.shortDescription}
-                  </p>
-                </Link>
-              ))}
-              {searchQuery.trim().length >= 2 &&
-              !isSearching &&
-              visibleSearchResults.length === 0 ? (
-                <p className="text-center text-sm font-bold text-[#6f6962]">
-                  No matching posts yet.
+                <h2 className="font-[family-name:var(--font-newsreader)] text-xl text-[var(--color-ink)]">
+                  {post.title}
+                </h2>
+                <p className="line-clamp-2 text-sm text-[var(--color-muted)]">
+                  {post.shortDescription}
                 </p>
-              ) : null}
-            </div>
+              </Link>
+            ))}
+            {searchQuery.trim().length >= 2 &&
+            !isSearching &&
+            visibleSearchResults.length === 0 ? (
+              <p className="py-6 text-sm text-[var(--color-muted)]">
+                No matching posts yet.
+              </p>
+            ) : null}
           </div>
         </form>
       </div>

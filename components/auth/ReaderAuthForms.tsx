@@ -4,9 +4,7 @@ import { useActionState } from "react";
 import {
   ReaderAuthState,
   readerLoginAction,
-  readerLogoutAction,
   readerSignupAction,
-  updateReaderPasswordAction,
 } from "@/app/login/actions";
 
 const initialState: ReaderAuthState = {
@@ -15,17 +13,16 @@ const initialState: ReaderAuthState = {
 };
 
 function Message({ state }: { state: ReaderAuthState }) {
-  if (!state.message) {
-    return null;
-  }
+  if (!state.message) return null;
 
   return (
     <p
-      className={`mt-4 border px-4 py-3 text-sm font-bold ${
+      className={`mt-4 border px-4 py-3 text-sm leading-6 ${
         state.status === "success"
-          ? "border-[#717a51] bg-[#f2f5e9] text-[#4f5740]"
-          : "border-[#b95742] bg-[#fff1eb] text-[#82331f]"
+          ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
+          : "border-[var(--color-danger)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
       }`}
+      role={state.status === "error" ? "alert" : "status"}
     >
       {state.message}
     </p>
@@ -33,35 +30,39 @@ function Message({ state }: { state: ReaderAuthState }) {
 }
 
 const inputClass =
-  "min-h-[56px] border border-[#8a8277] bg-transparent px-4 text-base font-semibold normal-case tracking-normal outline-none focus:border-[#717a51] focus:shadow-[0_0_0_3px_rgba(113,122,81,0.16)]";
+  "h-12 border border-[var(--color-hairline)] bg-transparent px-3 text-[15px] text-[var(--color-ink)] outline-none transition focus:border-[var(--color-accent)] focus:shadow-[0_0_0_3px_var(--color-accent-soft)]";
+
+const labelClass =
+  "grid gap-2 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-subtle)]";
 
 function AuthCard({
   children,
   eyebrow,
   title,
+  description,
 }: {
   children: React.ReactNode;
   eyebrow: string;
   title: string;
+  description: string;
 }) {
   return (
-    <section className="border border-[#d9cec1] bg-[#fffaf2] p-6">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#717a51]">
+    <section className="border border-[var(--color-hairline)] bg-[var(--color-paper)] p-6">
+      <p className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-accent)]">
         {eyebrow}
       </p>
-      <h2 className="mt-2 font-fraunces text-4xl font-medium">{title}</h2>
+      <h2 className="mt-3 font-[family-name:var(--font-newsreader)] text-[clamp(1.6rem,2.4vw,2rem)] font-normal leading-[1.1] tracking-[-0.01em] text-[var(--color-ink)]">
+        {title}
+      </h2>
+      <p className="mt-3 max-w-[46ch] text-[15px] leading-[1.65] text-[var(--color-muted)]">
+        {description}
+      </p>
       {children}
     </section>
   );
 }
 
-export default function ReaderAuthForms({
-  isSignedIn,
-  userEmail,
-}: {
-  isSignedIn: boolean;
-  userEmail?: string | null;
-}) {
+export default function ReaderAuthForms() {
   const [signupState, signupAction, isSigningUp] = useActionState(
     readerSignupAction,
     initialState,
@@ -70,110 +71,86 @@ export default function ReaderAuthForms({
     readerLoginAction,
     initialState,
   );
-  const [passwordState, passwordAction, isUpdatingPassword] = useActionState(
-    updateReaderPasswordAction,
-    initialState,
-  );
-  const [logoutState, logoutAction, isLoggingOut] = useActionState(
-    readerLogoutAction,
-    initialState,
-  );
 
   return (
-    <div className="grid gap-5">
-      {isSignedIn ? (
-        <AuthCard eyebrow="Profile" title="Account">
-          <p className="mt-3 font-semibold leading-7 text-[#625c52]">
-            Signed in as {userEmail}.
-          </p>
-          <form action={logoutAction} className="mt-5">
-            <button
-              className="min-h-[52px] cursor-pointer border border-[#191817] px-6 text-sm font-black uppercase tracking-[0.14em] transition hover:bg-[#191817] hover:text-[#fffdf9] disabled:cursor-wait disabled:opacity-70"
-              disabled={isLoggingOut}
-              type="submit"
-            >
-              {isLoggingOut ? "Signing Out" : "Sign Out"}
-            </button>
-          </form>
-          <Message state={logoutState} />
-        </AuthCard>
-      ) : null}
-
-      <div className="grid grid-cols-2 gap-5 max-[900px]:grid-cols-1">
-        <AuthCard eyebrow="New Reader" title="Create profile">
-          <form action={signupAction} className="mt-6 grid gap-4">
-            <label className="grid gap-2 text-sm font-black uppercase tracking-[0.14em] text-[#5f594f]">
-              Name
-              <input className={inputClass} name="name" required />
-            </label>
-            <label className="grid gap-2 text-sm font-black uppercase tracking-[0.14em] text-[#5f594f]">
-              Email
-              <input className={inputClass} name="email" required type="email" />
-            </label>
-            <label className="grid gap-2 text-sm font-black uppercase tracking-[0.14em] text-[#5f594f]">
-              Password
-              <input
-                className={inputClass}
-                minLength={6}
-                name="password"
-                required
-                type="password"
-              />
-            </label>
-            <button
-              className="min-h-[54px] cursor-pointer bg-[#191817] px-6 text-sm font-black uppercase tracking-[0.14em] text-[#fffdf9] transition hover:bg-[#717a51] disabled:cursor-wait disabled:opacity-70"
-              disabled={isSigningUp}
-              type="submit"
-            >
-              {isSigningUp ? "Creating" : "Create Account"}
-            </button>
-          </form>
-          <Message state={signupState} />
-        </AuthCard>
-
-        <AuthCard eyebrow="Reader Login" title="Sign in">
-          <form action={loginAction} className="mt-6 grid gap-4">
-            <label className="grid gap-2 text-sm font-black uppercase tracking-[0.14em] text-[#5f594f]">
-              Email
-              <input className={inputClass} name="email" required type="email" />
-            </label>
-            <label className="grid gap-2 text-sm font-black uppercase tracking-[0.14em] text-[#5f594f]">
-              Password
-              <input className={inputClass} name="password" required type="password" />
-            </label>
-            <button
-              className="min-h-[54px] cursor-pointer bg-[#717a51] px-6 text-sm font-black uppercase tracking-[0.14em] text-[#fffdf9] transition hover:bg-[#5f6944] disabled:cursor-wait disabled:opacity-70"
-              disabled={isLoggingIn}
-              type="submit"
-            >
-              {isLoggingIn ? "Signing In" : "Sign In"}
-            </button>
-          </form>
-          <Message state={loginState} />
-        </AuthCard>
-      </div>
-
-      <AuthCard eyebrow="Password" title="Update password">
-        <form action={passwordAction} className="mt-6 grid grid-cols-[1fr_auto] gap-3 max-[700px]:grid-cols-1">
-          <label className="grid gap-2 text-sm font-black uppercase tracking-[0.14em] text-[#5f594f]">
-            New Password
+    <div className="grid grid-cols-2 gap-6 max-[900px]:grid-cols-1">
+      <AuthCard
+        eyebrow="New reader"
+        title="Create a profile"
+        description="Save pieces, react, and leave notes. Takes about 30 seconds."
+      >
+        <form action={signupAction} className="mt-6 grid gap-4">
+          <label className={labelClass}>
+            Name
+            <input className={inputClass} name="name" required />
+          </label>
+          <label className={labelClass}>
+            Email
+            <input
+              className={inputClass}
+              name="email"
+              required
+              type="email"
+              autoComplete="email"
+            />
+          </label>
+          <label className={labelClass}>
+            Password
             <input
               className={inputClass}
               minLength={6}
               name="password"
               required
               type="password"
+              autoComplete="new-password"
             />
           </label>
           <button
-            className="self-end min-h-[56px] cursor-pointer bg-[#191817] px-6 text-sm font-black uppercase tracking-[0.14em] text-[#fffdf9] transition hover:bg-[#717a51] disabled:cursor-wait disabled:opacity-70"
-            disabled={isUpdatingPassword || !isSignedIn}
             type="submit"
+            disabled={isSigningUp}
+            className="mt-2 h-12 cursor-pointer bg-[var(--color-ink)] px-5 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-paper)] transition hover:bg-[var(--color-accent)] disabled:cursor-wait disabled:opacity-70"
           >
-            {isUpdatingPassword ? "Updating" : "Update"}
+            {isSigningUp ? "Creating…" : "Create account"}
           </button>
         </form>
-        <Message state={passwordState} />
+        <Message state={signupState} />
+      </AuthCard>
+
+      <AuthCard
+        eyebrow="Returning reader"
+        title="Sign in"
+        description="Pick up where you left off."
+      >
+        <form action={loginAction} className="mt-6 grid gap-4">
+          <label className={labelClass}>
+            Email
+            <input
+              className={inputClass}
+              name="email"
+              required
+              type="email"
+              autoComplete="email"
+            />
+          </label>
+          <label className={labelClass}>
+            Password
+            <input
+              className={inputClass}
+              name="password"
+              required
+              type="password"
+              autoComplete="current-password"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={isLoggingIn}
+            className="mt-2 h-12 cursor-pointer border border-[var(--color-ink)] bg-transparent px-5 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink)] transition hover:bg-[var(--color-ink)] hover:text-[var(--color-paper)] disabled:cursor-wait disabled:opacity-70"
+          >
+            {isLoggingIn ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+        <Message state={loginState} />
       </AuthCard>
     </div>
   );

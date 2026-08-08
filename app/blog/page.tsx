@@ -20,8 +20,8 @@ type BlogPageProps = {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Blog | Tejaswi Blog",
-  description: "Browse all published writing from Tejaswi Blog.",
+  title: "Archive — Tejaswi",
+  description: "Every published essay, note, and observation.",
 };
 
 function getSort(value?: string): PublishedPostSort {
@@ -33,7 +33,6 @@ function getSort(value?: string): PublishedPostSort {
   ) {
     return value;
   }
-
   return "newest";
 }
 
@@ -51,12 +50,12 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
   return (
     <PageShell>
-      <section className="px-6 py-[clamp(36px,7vw,92px)] max-[640px]:px-4">
-        <div className="mx-auto w-[min(100%,1250px)]">
+      <section className="px-6 py-[clamp(40px,6vw,84px)] max-[640px]:px-4">
+        <div className="mx-auto w-[min(100%,1200px)]">
           <SectionHeading
-            eyebrow="All posts"
-            title="Blog"
-            description="A visual index of Tejaswi's essays, notes, projects, and reflections."
+            eyebrow="Full archive"
+            title="Every piece of writing, in one place."
+            description="Filter by category, tag, or reading time. Sorted newest first by default."
           />
           <ArchiveControls
             categories={categories.map((category) => ({

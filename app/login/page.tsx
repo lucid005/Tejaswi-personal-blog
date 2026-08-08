@@ -8,8 +8,8 @@ import { syncReaderProfile } from "@/lib/reader-auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Sign Up | Tejaswi Blog",
-  description: "Reader account access for Tejaswi Blog.",
+  title: "Reader — Tejaswi",
+  description: "Your reader account for Tejaswi's writing archive.",
 };
 
 export default async function LoginPage() {
@@ -21,9 +21,7 @@ export default async function LoginPage() {
   const [savedPosts, history] = reader
     ? await Promise.all([
         prisma.savedPost.findMany({
-          where: {
-            userId: reader.id,
-          },
+          where: { userId: reader.id },
           include: {
             post: {
               select: {
@@ -34,15 +32,11 @@ export default async function LoginPage() {
               },
             },
           },
-          orderBy: {
-            createdAt: "desc",
-          },
+          orderBy: { createdAt: "desc" },
           take: 6,
         }),
         prisma.readingHistory.findMany({
-          where: {
-            userId: reader.id,
-          },
+          where: { userId: reader.id },
           include: {
             post: {
               select: {
@@ -52,9 +46,7 @@ export default async function LoginPage() {
               },
             },
           },
-          orderBy: {
-            lastReadAt: "desc",
-          },
+          orderBy: { lastReadAt: "desc" },
           take: 6,
         }),
       ])
@@ -62,21 +54,22 @@ export default async function LoginPage() {
 
   return (
     <PageShell>
-      <section className="px-6 py-[clamp(48px,8vw,120px)] max-[640px]:px-4">
-        <div className="mx-auto w-[min(100%,1120px)]">
+      <section className="px-6 py-[clamp(48px,7vw,110px)] max-[640px]:px-4">
+        <div className="mx-auto w-[min(100%,1100px)]">
           <SectionHeading
-            eyebrow="Reader account"
-            title="Profile"
+            eyebrow={reader ? "Reader" : "Sign in"}
+            title={reader ? "Your reader space" : "Reader access"}
             description={
-              user
-                ? "Your saved posts, recent reads, and account controls."
-                : "Create a reader profile, sign in, or update your password."
+              reader
+                ? "Return to what you saved, or continue reading where you left off."
+                : "Save pieces, react, and build a reading history. Reading itself is always free — this is the small door for the rest."
             }
           />
           {reader ? (
             <ReaderDashboard history={history} savedPosts={savedPosts} />
-          ) : null}
-          <ReaderAuthForms isSignedIn={!!user} userEmail={user?.email} />
+          ) : (
+            <ReaderAuthForms />
+          )}
         </div>
       </section>
     </PageShell>

@@ -34,6 +34,14 @@ const reactionLabels = {
   RELATABLE: "Relatable",
 } satisfies Record<ReactionType, string>;
 
+function relativeDate(date: Date) {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
 function HiddenFields({ postId, slug }: { postId: string; slug: string }) {
   return (
     <>
@@ -55,32 +63,38 @@ function Comment({
   slug: string;
 }) {
   const canDelete = currentUserId === comment.userId;
+  const isAdmin = comment.user.role.toLowerCase() === "admin";
 
   return (
-    <article className="border-t border-[#d9cec1] py-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-fraunces text-2xl font-medium">
-            {comment.user.name || comment.user.email}
+    <article className="border-t border-[var(--color-hairline)] py-6 first:border-t-0 first:pt-0">
+      <header className="flex items-baseline justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <p className="font-[family-name:var(--font-newsreader)] text-lg text-[var(--color-ink)]">
+            {comment.user.name || comment.user.email.split("@")[0]}
           </p>
-          <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] text-[#717a51]">
-            {comment.user.role.toLowerCase()}
-          </p>
+          {isAdmin ? (
+            <span className="font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.14em] text-[var(--color-accent)]">
+              Author
+            </span>
+          ) : null}
+          <time className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.12em] text-[var(--color-subtle)]">
+            {relativeDate(comment.createdAt)}
+          </time>
         </div>
         {canDelete ? (
           <form action={deleteCommentAction}>
             <input name="commentId" type="hidden" value={comment.id} />
             <input name="slug" type="hidden" value={slug} />
             <button
-              className="cursor-pointer text-xs font-black uppercase tracking-[0.14em] text-[#82331f] hover:text-[#191817]"
               type="submit"
+              className="cursor-pointer font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.12em] text-[var(--color-subtle)] transition hover:text-[var(--color-danger)]"
             >
               Delete
             </button>
           </form>
         ) : null}
-      </div>
-      <p className="mt-3 whitespace-pre-wrap text-base font-semibold leading-7 text-[#2f2c29]">
+      </header>
+      <p className="mt-3 whitespace-pre-wrap font-[family-name:var(--font-newsreader)] text-[1.05rem] leading-[1.7] text-[var(--color-ink)]">
         {comment.content}
       </p>
 
@@ -89,14 +103,14 @@ function Comment({
           <HiddenFields postId={postId} slug={slug} />
           <input name="parentId" type="hidden" value={comment.id} />
           <textarea
-            className="min-h-[92px] resize-y border border-[#a89f93] bg-transparent px-3 py-2 text-sm font-semibold outline-none focus:border-[#717a51]"
             name="content"
-            placeholder="Reply"
+            placeholder="Reply…"
             required
+            className="min-h-[80px] resize-y border border-[var(--color-hairline)] bg-transparent px-3 py-2 text-sm leading-6 text-[var(--color-ink)] outline-none focus:border-[var(--color-accent)]"
           />
           <button
-            className="justify-self-start border border-[#191817] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition hover:bg-[#191817] hover:text-[#fffdf9]"
             type="submit"
+            className="justify-self-start bg-[var(--color-ink)] px-4 py-2 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-paper)] transition hover:bg-[var(--color-accent)]"
           >
             Reply
           </button>
@@ -104,12 +118,12 @@ function Comment({
       ) : null}
 
       {comment.replies.length > 0 ? (
-        <div className="ml-6 mt-5 border-l border-[#d9cec1] pl-5 max-[640px]:ml-2 max-[640px]:pl-4">
+        <div className="mt-5 border-l border-[var(--color-hairline)] pl-5">
           {comment.replies.map((reply) => (
             <Comment
+              key={reply.id}
               comment={reply}
               currentUserId={currentUserId}
-              key={reply.id}
               postId={postId}
               slug={slug}
             />
@@ -142,110 +156,113 @@ export default function PostInteractions({
   );
 
   return (
-    <section className="mx-auto w-[min(100%,1180px)] px-6 pb-[clamp(66px,9vw,120px)] max-[640px]:px-4">
-      <div className="grid grid-cols-[minmax(0,760px)_minmax(230px,1fr)] gap-[clamp(34px,6vw,82px)] max-[920px]:grid-cols-1">
-        <div>
-          <div className="border-y border-[#d9cec1] py-6">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#717a51]">
-              Reactions
-            </p>
-            {currentUserId ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {Object.values(ReactionType).map((type) => (
-                  <form action={reactToPostAction} key={type}>
-                    <HiddenFields postId={postId} slug={slug} />
-                    <input name="reactionType" type="hidden" value={type} />
-                    <button
-                      className={`cursor-pointer border px-3 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
-                        currentReaction === type
-                          ? "border-[#717a51] bg-[#717a51] text-[#fffdf9]"
-                          : "border-[#c6b9a8] text-[#5f594f] hover:border-[#191817]"
-                      }`}
-                      type="submit"
-                    >
-                      {reactionLabels[type]} {countMap.get(type) ?? 0}
-                    </button>
-                  </form>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 font-semibold leading-7 text-[#625c55]">
-                <Link className="text-[#4f5740] underline" href="/login">
-                  Sign in
-                </Link>{" "}
-                to react, save, or comment.
-              </p>
-            )}
-          </div>
-
-          <div className="mt-8">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#717a51]">
-                  Comments
-                </p>
-                <h2 className="mt-2 font-fraunces text-[clamp(2rem,4vw,4rem)] font-medium leading-none">
-                  Discussion
-                </h2>
-              </div>
-              {currentUserId ? (
-                <form action={isSaved ? unsavePostAction : savePostAction}>
-                  <HiddenFields postId={postId} slug={slug} />
-                  <button
-                    className="cursor-pointer border border-[#191817] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition hover:bg-[#191817] hover:text-[#fffdf9]"
-                    type="submit"
-                  >
-                    {isSaved ? "Saved" : "Save"}
-                  </button>
-                </form>
-              ) : null}
-            </div>
-
-            {currentUserId ? (
-              <form action={addCommentAction} className="mt-6 grid gap-3">
+    <section
+      aria-label="Reader interactions"
+      className="mx-auto w-[min(100%,720px)] px-6 pb-[clamp(64px,9vw,120px)] max-[640px]:px-4"
+    >
+      <div className="grid gap-4 border-y border-[var(--color-hairline)] py-6">
+        <div className="flex items-baseline justify-between gap-4">
+          <p className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-subtle)]">
+            How did this land?
+          </p>
+          {currentUserId ? (
+            <form action={isSaved ? unsavePostAction : savePostAction}>
+              <HiddenFields postId={postId} slug={slug} />
+              <button
+                type="submit"
+                className={`cursor-pointer border px-4 py-2 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] transition ${
+                  isSaved
+                    ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-paper)]"
+                    : "border-[var(--color-ink)] text-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-paper)]"
+                }`}
+              >
+                {isSaved ? "Saved" : "Save"}
+              </button>
+            </form>
+          ) : null}
+        </div>
+        {currentUserId ? (
+          <div className="flex flex-wrap gap-2">
+            {Object.values(ReactionType).map((type) => (
+              <form action={reactToPostAction} key={type}>
                 <HiddenFields postId={postId} slug={slug} />
-                <textarea
-                  className="min-h-[130px] resize-y border border-[#8a8277] bg-transparent px-4 py-3 text-base font-semibold leading-7 outline-none focus:border-[#717a51] focus:shadow-[0_0_0_3px_rgba(113,122,81,0.16)]"
-                  name="content"
-                  placeholder="Write a comment"
-                  required
-                />
+                <input name="reactionType" type="hidden" value={type} />
                 <button
-                  className="justify-self-start bg-[#191817] px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#fffdf9] transition hover:bg-[#717a51]"
                   type="submit"
+                  className={`cursor-pointer border px-3 py-2 text-[13px] transition ${
+                    currentReaction === type
+                      ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
+                      : "border-[var(--color-hairline)] text-[var(--color-muted)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
+                  }`}
                 >
-                  Post Comment
+                  <span className="font-[family-name:var(--font-newsreader)]">
+                    {reactionLabels[type]}
+                  </span>
+                  <span className="ml-2 font-[family-name:var(--font-geist-mono)] text-[11px] text-[var(--color-subtle)]">
+                    {countMap.get(type) ?? 0}
+                  </span>
                 </button>
               </form>
-            ) : null}
-
-            <div className="mt-6">
-              {comments.length > 0 ? (
-                comments.map((comment) => (
-                  <Comment
-                    comment={comment}
-                    currentUserId={currentUserId}
-                    key={comment.id}
-                    postId={postId}
-                    slug={slug}
-                  />
-                ))
-              ) : (
-                <p className="border-y border-[#d9cec1] py-8 text-base font-semibold text-[#625c55]">
-                  No comments yet.
-                </p>
-              )}
-            </div>
+            ))}
           </div>
+        ) : (
+          <p className="text-[15px] leading-7 text-[var(--color-muted)]">
+            <Link
+              href="/login"
+              className="text-[var(--color-accent)] underline underline-offset-4 hover:text-[var(--color-ink)]"
+            >
+              Sign in
+            </Link>{" "}
+            to react, save, or leave a note.
+          </p>
+        )}
+      </div>
+
+      <div className="mt-12">
+        <div className="mb-6 flex items-baseline justify-between gap-4">
+          <h2 className="font-[family-name:var(--font-newsreader)] text-[clamp(1.7rem,3vw,2.2rem)] font-normal leading-none tracking-[-0.015em] text-[var(--color-ink)]">
+            Notes from readers
+          </h2>
+          <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-subtle)]">
+            {comments.length} {comments.length === 1 ? "note" : "notes"}
+          </span>
         </div>
 
-        <aside className="border-t border-[#d9cec1] pt-5">
-          <p className="font-fraunces text-2xl font-medium">Reader tools</p>
-          <p className="mt-3 text-sm font-semibold leading-6 text-[#625c55]">
-            Save posts to your profile and keep track of what you have been
-            reading.
-          </p>
-        </aside>
+        {currentUserId ? (
+          <form action={addCommentAction} className="mb-8 grid gap-3">
+            <HiddenFields postId={postId} slug={slug} />
+            <textarea
+              name="content"
+              placeholder="Write a note…"
+              required
+              className="min-h-[120px] resize-y border border-[var(--color-hairline)] bg-transparent px-4 py-3 text-[15px] leading-7 text-[var(--color-ink)] outline-none focus:border-[var(--color-accent)] focus:shadow-[0_0_0_3px_var(--color-accent-soft)]"
+            />
+            <button
+              type="submit"
+              className="justify-self-start bg-[var(--color-ink)] px-5 py-3 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-paper)] transition hover:bg-[var(--color-accent)]"
+            >
+              Post note
+            </button>
+          </form>
+        ) : null}
+
+        <div>
+          {comments.length > 0 ? (
+            comments.map((comment) => (
+              <Comment
+                key={comment.id}
+                comment={comment}
+                currentUserId={currentUserId}
+                postId={postId}
+                slug={slug}
+              />
+            ))
+          ) : (
+            <p className="border-y border-[var(--color-hairline)] py-8 text-[15px] leading-7 text-[var(--color-muted)]">
+              No notes yet. Be the first to leave one.
+            </p>
+          )}
+        </div>
       </div>
     </section>
   );
