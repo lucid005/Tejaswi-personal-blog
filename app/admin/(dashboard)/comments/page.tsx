@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { CommentStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   deleteAdminCommentAction,
   replyAsAdminAction,
+  setCommentStatusAction,
 } from "./actions";
 
 export default async function AdminCommentsPage() {
@@ -29,10 +31,14 @@ export default async function AdminCommentsPage() {
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    // PENDING is first in the enum, so ascending puts what needs Tejaswi's
+    // attention at the top.
+    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
   });
+
+  const pendingCount = comments.filter(
+    (comment) => comment.status === CommentStatus.PENDING,
+  ).length;
 
   return (
     <section>
@@ -42,6 +48,11 @@ export default async function AdminCommentsPage() {
       <h1 className="mt-3 font-fraunces text-[clamp(2.8rem,7vw,6.6rem)] font-medium leading-none tracking-normal">
         Discussion
       </h1>
+      <p className="mt-4 text-sm font-black uppercase tracking-[0.14em] text-[#717a51]">
+        {pendingCount === 0
+          ? "Nothing waiting for you"
+          : `${pendingCount} awaiting your approval`}
+      </p>
 
       <div className="mt-10 divide-y divide-[#d9cec1] border border-[#d9cec1] bg-[#fffaf2]">
         {comments.map((comment) => (
@@ -64,16 +75,70 @@ export default async function AdminCommentsPage() {
                   </Link>
                 </p>
               </div>
-              <form action={deleteAdminCommentAction}>
-                <input name="commentId" type="hidden" value={comment.id} />
-                <input name="slug" type="hidden" value={comment.post.slug} />
-                <button
-                  className="cursor-pointer border border-[#b95742] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#82331f] transition hover:bg-[#82331f] hover:text-[#fffdf9]"
-                  type="submit"
-                >
-                  Delete
-                </button>
-              </form>
+              <div className="flex flex-wrap items-start gap-2">
+                {comment.status !== CommentStatus.APPROVED ? (
+                  <form action={setCommentStatusAction}>
+                    <input name="commentId" type="hidden" value={comment.id} />
+                    <input name="slug" type="hidden" value={comment.post.slug} />
+                    <input
+                      name="status"
+                      type="hidden"
+                      value={CommentStatus.APPROVED}
+                    />
+                    <button
+                      className="cursor-pointer border border-[#4f5740] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#4f5740] transition hover:bg-[#4f5740] hover:text-[#fffdf9]"
+                      type="submit"
+                    >
+                      Approve
+                    </button>
+                  </form>
+                ) : null}
+
+                {comment.status !== CommentStatus.HIDDEN ? (
+                  <form action={setCommentStatusAction}>
+                    <input name="commentId" type="hidden" value={comment.id} />
+                    <input name="slug" type="hidden" value={comment.post.slug} />
+                    <input
+                      name="status"
+                      type="hidden"
+                      value={CommentStatus.HIDDEN}
+                    />
+                    <button
+                      className="cursor-pointer border border-[#8a8277] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5f594f] transition hover:bg-[#5f594f] hover:text-[#fffdf9]"
+                      type="submit"
+                    >
+                      Hide
+                    </button>
+                  </form>
+                ) : (
+                  <form action={setCommentStatusAction}>
+                    <input name="commentId" type="hidden" value={comment.id} />
+                    <input name="slug" type="hidden" value={comment.post.slug} />
+                    <input
+                      name="status"
+                      type="hidden"
+                      value={CommentStatus.PENDING}
+                    />
+                    <button
+                      className="cursor-pointer border border-[#8a8277] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5f594f] transition hover:bg-[#5f594f] hover:text-[#fffdf9]"
+                      type="submit"
+                    >
+                      Unhide
+                    </button>
+                  </form>
+                )}
+
+                <form action={deleteAdminCommentAction}>
+                  <input name="commentId" type="hidden" value={comment.id} />
+                  <input name="slug" type="hidden" value={comment.post.slug} />
+                  <button
+                    className="cursor-pointer border border-[#b95742] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#82331f] transition hover:bg-[#82331f] hover:text-[#fffdf9]"
+                    type="submit"
+                  >
+                    Delete
+                  </button>
+                </form>
+              </div>
             </div>
 
             {comment.parent ? (

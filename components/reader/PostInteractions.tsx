@@ -12,6 +12,7 @@ type CommentItem = {
   id: string;
   content: string;
   createdAt: Date;
+  status: string;
   userId: string;
   user: {
     name: string | null;
@@ -64,6 +65,7 @@ function Comment({
 }) {
   const canDelete = currentUserId === comment.userId;
   const isAdmin = comment.user.role.toLowerCase() === "admin";
+  const isPending = comment.status === "PENDING";
 
   return (
     <article className="border-t border-[var(--color-hairline)] py-6 first:border-t-0 first:pt-0">
@@ -80,6 +82,14 @@ function Comment({
           <time className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.12em] text-[var(--color-subtle)]">
             {relativeDate(comment.createdAt)}
           </time>
+          {isPending ? (
+            <span
+              className="border border-[var(--color-hairline)] px-2 py-[2px] font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)]"
+              title="Only you can see this until Tejaswi approves it."
+            >
+              Awaiting approval
+            </span>
+          ) : null}
         </div>
         {canDelete ? (
           <form action={deleteCommentAction}>

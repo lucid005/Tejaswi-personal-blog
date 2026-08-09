@@ -57,6 +57,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     await trackReadingHistory(post.id);
   }
 
+  // Everyone sees approved comments. A reader additionally sees their own
+  // pending one, so they can tell it was received rather than swallowed.
+  const commentVisibility = currentReader
+    ? {
+        OR: [
+          { status: CommentStatus.APPROVED },
+          { status: CommentStatus.PENDING, userId: currentReader.id },
+        ],
+      }
+    : { status: CommentStatus.APPROVED };
+
   const [relatedPosts, comments, reactionCounts, currentReaction, savedPost] =
     await Promise.all([
       getRelatedPosts(post),
@@ -64,14 +75,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         where: {
           postId: post.id,
           parentId: null,
-          status: CommentStatus.APPROVED,
+          ...commentVisibility,
         },
         include: {
           user: {
             select: { email: true, name: true, role: true },
           },
           replies: {
-            where: { status: CommentStatus.APPROVED },
+            where: commentVisibility,
             include: {
               user: {
                 select: { email: true, name: true, role: true },
