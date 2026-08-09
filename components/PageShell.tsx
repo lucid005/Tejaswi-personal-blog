@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { getViewer } from "@/lib/viewer";
 
 type PageShellProps = {
   children: React.ReactNode;
@@ -13,10 +14,12 @@ const footerLinks = [
   { label: "Search", href: "/search" },
 ];
 
-export default function PageShell({ children }: PageShellProps) {
+export default async function PageShell({ children }: PageShellProps) {
+  const viewer = await getViewer();
+
   return (
     <main className="flex min-h-screen flex-col bg-[var(--color-paper)] text-[var(--color-ink)]">
-      <Navbar />
+      <Navbar viewer={viewer} />
       <div className="flex-1">{children}</div>
       <footer className="border-t border-[var(--color-hairline)] px-6 py-10 max-[640px]:px-4">
         <div className="mx-auto grid w-[min(100%,1200px)] gap-6">
@@ -50,9 +53,12 @@ export default function PageShell({ children }: PageShellProps) {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-hairline)] pt-6 text-xs text-[var(--color-subtle)]">
             <p>© {new Date().getFullYear()} Tejaswi. Written by hand.</p>
-            <p className="font-[family-name:var(--font-geist-mono)] uppercase tracking-[0.14em]">
-              RSS coming soon
-            </p>
+            <a
+              href="/feed.xml"
+              className="font-[family-name:var(--font-geist-mono)] uppercase tracking-[0.14em] transition hover:text-[var(--color-ink)]"
+            >
+              RSS
+            </a>
           </div>
         </div>
       </footer>

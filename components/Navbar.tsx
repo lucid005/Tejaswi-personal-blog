@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { PiListBold, PiMagnifyingGlass, PiX } from "react-icons/pi";
+import {
+  PiGauge,
+  PiListBold,
+  PiMagnifyingGlass,
+  PiX,
+} from "react-icons/pi";
+import { navLogoutAction } from "@/app/login/actions";
+import type { Viewer } from "@/lib/viewer";
 
 const navItems = [
   { label: "Latest", href: "/" },
@@ -20,10 +27,11 @@ type SearchResult = {
   category: string;
 };
 
-export default function Navbar() {
+export default function Navbar({ viewer }: { viewer: Viewer | null }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -57,20 +65,18 @@ export default function Navbar() {
   }, [canSearch, searchQuery]);
 
   useEffect(() => {
-    setIsMenuOpen(false);
-    setIsSearchOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-        setIsSearchOpen(false);
-      }
+      if (event.key === "Escape") closeAll();
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
+
+  function closeAll() {
+    setIsMenuOpen(false);
+    setIsSearchOpen(false);
+    setIsAccountOpen(false);
+  }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     if (!searchQuery.trim()) event.preventDefault();
@@ -80,6 +86,11 @@ export default function Navbar() {
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
   }
+
+  const accountLabel = viewer?.name ?? viewer?.email ?? "";
+  const initial = accountLabel.charAt(0).toUpperCase() || "?";
+  const menuItem =
+    "block px-4 py-2.5 text-[13px] text-[var(--color-ink)] transition hover:bg-[var(--color-surface)]";
 
   return (
     <>
@@ -132,12 +143,82 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center justify-end gap-2">
-            <Link
-              href="/login"
-              className="hidden text-[13px] text-[var(--color-muted)] transition hover:text-[var(--color-ink)] min-[640px]:inline"
-            >
-              Sign in
-            </Link>
+            {viewer ? (
+              <>
+                {viewer.isAdmin ? (
+                  <Link
+                    href="/admin"
+                    className="hidden items-center gap-1.5 rounded-full border border-[var(--color-hairline)] px-3 py-1.5 text-[12px] text-[var(--color-muted)] transition hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] min-[640px]:inline-flex"
+                  >
+                    <PiGauge aria-hidden="true" className="h-3.5 w-3.5" />
+                    Studio
+                  </Link>
+                ) : null}
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label="Account menu"
+                    aria-expanded={isAccountOpen}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsSearchOpen(false);
+                      setIsAccountOpen((v) => !v);
+                    }}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-hairline)] text-[13px] font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface)]"
+                  >
+                    {initial}
+                  </button>
+
+                  {isAccountOpen ? (
+                    <>
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        onClick={() => setIsAccountOpen(false)}
+                        className="fixed inset-0 z-40 cursor-default"
+                      />
+                      <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-56 overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-paper)] shadow-lg">
+                        <p className="truncate border-b border-[var(--color-hairline)] px-4 py-3 text-[12px] text-[var(--color-muted)]">
+                          {accountLabel}
+                        </p>
+                        {viewer.isAdmin ? (
+                          <Link href="/admin" onClick={closeAll} className={menuItem}>
+                            Admin studio
+                          </Link>
+                        ) : null}
+                        <Link href="/login" onClick={closeAll} className={menuItem}>
+                          Your dashboard
+                        </Link>
+                        <Link
+                          href="/login/settings"
+                          onClick={closeAll}
+                          className={menuItem}
+                        >
+                          Settings
+                        </Link>
+                        <form action={navLogoutAction}>
+                          <button
+                            type="submit"
+                            className={`${menuItem} w-full border-t border-[var(--color-hairline)] text-left`}
+                          >
+                            Sign out
+                          </button>
+                        </form>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="hidden text-[13px] text-[var(--color-muted)] transition hover:text-[var(--color-ink)] min-[640px]:inline"
+              >
+                Sign in
+              </Link>
+            )}
             <button
               type="button"
               aria-label={isSearchOpen ? "Close search" : "Open search"}
@@ -170,17 +251,55 @@ export default function Navbar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={closeAll}
               className="border-b border-[var(--color-hairline)] py-3 font-[family-name:var(--font-newsreader)] text-3xl tracking-[-0.01em] text-[var(--color-ink)] transition hover:text-[var(--color-accent)]"
             >
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/login"
-            className="border-b border-[var(--color-hairline)] py-3 text-sm text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
-          >
-            Sign in
-          </Link>
+          {viewer ? (
+            <>
+              {viewer.isAdmin ? (
+                <Link
+                  href="/admin"
+                  onClick={closeAll}
+                  className="border-b border-[var(--color-hairline)] py-3 text-sm text-[var(--color-ink)] transition hover:text-[var(--color-accent)]"
+                >
+                  Admin studio
+                </Link>
+              ) : null}
+              <Link
+                href="/login"
+                onClick={closeAll}
+                className="border-b border-[var(--color-hairline)] py-3 text-sm text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
+              >
+                Your dashboard
+              </Link>
+              <Link
+                href="/login/settings"
+                onClick={closeAll}
+                className="border-b border-[var(--color-hairline)] py-3 text-sm text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
+              >
+                Settings
+              </Link>
+              <form action={navLogoutAction}>
+                <button
+                  type="submit"
+                  className="w-full border-b border-[var(--color-hairline)] py-3 text-left text-sm text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
+                >
+                  Sign out
+                </button>
+              </form>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              onClick={closeAll}
+              className="border-b border-[var(--color-hairline)] py-3 text-sm text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
       </div>
 
@@ -228,6 +347,7 @@ export default function Navbar() {
               <Link
                 key={post.id}
                 href={`/blog/${post.slug}`}
+                onClick={closeAll}
                 className="grid gap-1 border-b border-[var(--color-hairline)] py-4 transition hover:bg-[var(--color-surface)]/60"
               >
                 <p className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-accent)]">

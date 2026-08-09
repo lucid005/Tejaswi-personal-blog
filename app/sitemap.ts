@@ -7,6 +7,10 @@ import {
 } from "@/lib/posts";
 import { SITE_URL } from "@/lib/site";
 
+// Prerendered at build time by default, which would freeze the sitemap at
+// whatever was published the day you deployed. Refresh it hourly instead.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Everything here comes from the published-posts query, so a draft can never
   // reach the sitemap.

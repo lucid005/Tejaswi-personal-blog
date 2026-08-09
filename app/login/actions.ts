@@ -132,6 +132,15 @@ export async function updateReaderPasswordAction(
   return success("Password updated.");
 }
 
+// Plain redirecting variant for the navbar, which posts a bare form instead of
+// rendering the useActionState message that the settings page needs.
+export async function navLogoutAction() {
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/");
+}
+
 export async function readerLogoutAction(
   previousState: ReaderAuthState,
 ): Promise<ReaderAuthState> {
