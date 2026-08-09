@@ -14,7 +14,13 @@ const prisma = new PrismaClient({
   adapter,
 });
 
-const adminEmail = process.env.ADMIN_SEED_EMAIL ?? "admin@gamil.com";
+const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+
+if (!configuredAdminEmail) {
+  throw new Error("ADMIN_EMAIL is not set. Refusing to seed an admin account.");
+}
+
+const adminEmail: string = configuredAdminEmail;
 
 const categories = [
   {

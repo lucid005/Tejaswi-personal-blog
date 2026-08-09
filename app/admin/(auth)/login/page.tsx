@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ADMIN_EMAIL } from "@/lib/admin-auth";
 import { adminLoginAction } from "./actions";
 
 export const metadata: Metadata = {
@@ -57,7 +56,6 @@ export default async function AdminLoginPage({
               Email
               <input
                 className="min-h-[56px] border border-[#8a8277] bg-transparent px-4 text-base font-semibold normal-case tracking-normal outline-none focus:border-[#717a51] focus:shadow-[0_0_0_3px_rgba(113,122,81,0.16)]"
-                defaultValue={ADMIN_EMAIL}
                 name="email"
                 required
                 type="email"

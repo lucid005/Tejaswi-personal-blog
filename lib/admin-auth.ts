@@ -1,58 +1,26 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import { UserRole } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const ADMIN_EMAIL =
-  process.env.ADMIN_EMAIL ?? process.env.ADMIN_SEED_EMAIL ?? "admin@gamil.com";
+function readAdminEmail() {
+  const email = process.env.ADMIN_EMAIL?.trim();
 
-export const ADMIN_PASSWORD =
-  process.env.ADMIN_PASSWORD ?? process.env.ADMIN_SEED_PASSWORD ?? "Admin@123";
+  if (!email) {
+    throw new Error(
+      "ADMIN_EMAIL is not set. Refusing to start with an unprotected admin account.",
+    );
+  }
 
-function isConfiguredAdmin(email: string | undefined | null) {
-  return email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  return email.toLowerCase();
 }
 
-export async function bootstrapAdminUser(password: string) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Evaluated on first import, so a misconfigured deployment fails loudly at
+// startup instead of quietly falling back to a known account.
+export const ADMIN_EMAIL = readAdminEmail();
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    return {
-      ok: false,
-      message: "Supabase service role key is missing.",
-    };
-  }
-
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-
-  const { error } = await adminClient.auth.admin.createUser({
-    email: ADMIN_EMAIL,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      name: "Tejaswi Admin",
-      role: "admin",
-    },
-  });
-
-  if (error && !error.message.toLowerCase().includes("already")) {
-    return {
-      ok: false,
-      message: error.message,
-    };
-  }
-
-  return {
-    ok: true,
-    message: null,
-  };
+export function isConfiguredAdmin(email: string | undefined | null) {
+  return email?.trim().toLowerCase() === ADMIN_EMAIL;
 }
 
 export async function syncAdminProfile(authUser: {
@@ -69,13 +37,12 @@ export async function syncAdminProfile(authUser: {
     },
     update: {
       role: UserRole.ADMIN,
-      name: "Tejaswi Admin",
     },
     create: {
       id: authUser.id,
       email: ADMIN_EMAIL,
-      name: "Tejaswi Admin",
-      username: "tejaswi-admin",
+      name: "Tejaswi",
+      username: "tejaswi",
       role: UserRole.ADMIN,
     },
   });

@@ -3,8 +3,7 @@
 import { redirect } from "next/navigation";
 import {
   ADMIN_EMAIL,
-  ADMIN_PASSWORD,
-  bootstrapAdminUser,
+  isConfiguredAdmin,
   syncAdminProfile,
 } from "@/lib/admin-auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -15,36 +14,27 @@ function getString(formData: FormData, key: string) {
 }
 
 export async function adminLoginAction(formData: FormData) {
-  const email = getString(formData, "email").toLowerCase();
+  const email = getString(formData, "email");
   const password = getString(formData, "password");
 
-  if (email !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
+  // The password is never compared here — Supabase verifies it. The only check
+  // this app makes is that the address is the configured admin.
+  if (!isConfiguredAdmin(email) || !password) {
     redirect("/admin/login?error=invalid");
   }
 
   const supabase = await createSupabaseServerClient();
-  let result = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: ADMIN_EMAIL,
     password,
   });
 
-  if (result.error) {
-    const bootstrap = await bootstrapAdminUser(password);
-
-    if (!bootstrap.ok) {
-      redirect("/admin/login?error=setup");
-    }
-
-    result = await supabase.auth.signInWithPassword({
-      email: ADMIN_EMAIL,
-      password,
-    });
+  // One error code for every failure, so the form never reveals whether the
+  // address was the right one.
+  if (error || !data.user) {
+    redirect("/admin/login?error=invalid");
   }
 
-  if (result.error || !result.data.user) {
-    redirect("/admin/login?error=auth");
-  }
-
-  await syncAdminProfile(result.data.user);
+  await syncAdminProfile(data.user);
   redirect("/admin");
 }
