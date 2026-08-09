@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { syncReaderProfile } from "@/lib/reader-auth";
+import { safeNext } from "@/lib/safe-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ReaderAuthState = {
@@ -61,6 +63,13 @@ export async function readerSignupAction(
   }
 
   revalidatePath("/login");
+
+  // Only when the project signs new readers straight in; otherwise they still
+  // have an email to confirm and there is nowhere to send them yet.
+  if (data.session) {
+    redirect(safeNext(getString(formData, "next")));
+  }
+
   return success("Account created. You can update your password from this page.");
 }
 
@@ -90,7 +99,7 @@ export async function readerLoginAction(
   }
 
   revalidatePath("/login");
-  return success("Signed in.");
+  redirect(safeNext(getString(formData, "next")));
 }
 
 export async function updateReaderPasswordAction(

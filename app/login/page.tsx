@@ -5,6 +5,7 @@ import ReaderDashboard from "@/components/reader/ReaderDashboard";
 import SectionHeading from "@/components/SectionHeading";
 import { prisma } from "@/lib/prisma";
 import { syncReaderProfile } from "@/lib/reader-auth";
+import { safeNext } from "@/lib/safe-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -12,45 +13,57 @@ export const metadata: Metadata = {
   description: "Your reader account for Tejaswi's writing archive.",
 };
 
-export default async function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{
+    next?: string;
+  }>;
+};
+
+const postSelect = {
+  slug: true,
+  title: true,
+  shortDescription: true,
+  publishedAt: true,
+} as const;
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { next } = await searchParams;
+  const returnTo = safeNext(next);
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const reader = user ? await syncReaderProfile(user) : null;
-  const [savedPosts, history] = reader
+
+  const [savedPosts, history, reactions, comments] = reader
     ? await Promise.all([
         prisma.savedPost.findMany({
           where: { userId: reader.id },
-          include: {
-            post: {
-              select: {
-                slug: true,
-                title: true,
-                shortDescription: true,
-                publishedAt: true,
-              },
-            },
-          },
+          include: { post: { select: postSelect } },
           orderBy: { createdAt: "desc" },
           take: 6,
         }),
         prisma.readingHistory.findMany({
           where: { userId: reader.id },
-          include: {
-            post: {
-              select: {
-                slug: true,
-                title: true,
-                shortDescription: true,
-              },
-            },
-          },
+          include: { post: { select: postSelect } },
           orderBy: { lastReadAt: "desc" },
           take: 6,
         }),
+        prisma.reaction.findMany({
+          where: { userId: reader.id },
+          include: { post: { select: postSelect } },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+        }),
+        prisma.comment.findMany({
+          where: { userId: reader.id },
+          include: { post: { select: postSelect } },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+        }),
       ])
-    : [[], []];
+    : [[], [], [], []];
 
   return (
     <PageShell>
@@ -61,14 +74,19 @@ export default async function LoginPage() {
             title={reader ? "Your reader space" : "Reader access"}
             description={
               reader
-                ? "Return to what you saved, or continue reading where you left off."
+                ? "Everything you saved, reacted to, wrote on, and opened recently."
                 : "Save pieces, react, and build a reading history. Reading itself is always free — this is the small door for the rest."
             }
           />
           {reader ? (
-            <ReaderDashboard history={history} savedPosts={savedPosts} />
+            <ReaderDashboard
+              comments={comments}
+              history={history}
+              reactions={reactions}
+              savedPosts={savedPosts}
+            />
           ) : (
-            <ReaderAuthForms />
+            <ReaderAuthForms next={returnTo} />
           )}
         </div>
       </section>

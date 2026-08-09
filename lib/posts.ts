@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
-import { PostStatus, Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
+import { publishedPostWhere } from "@/lib/post-visibility";
 import { prisma } from "@/lib/prisma";
+
+export { publishedPostWhere };
 
 const postInclude = {
   author: {
@@ -18,14 +21,6 @@ const postInclude = {
     },
   },
 } satisfies Prisma.PostInclude;
-
-const publishedPostWhere = () =>
-  ({
-    status: PostStatus.PUBLISHED,
-    publishedAt: {
-      lte: new Date(),
-    },
-  }) satisfies Prisma.PostWhereInput;
 
 export type PublicPost = Prisma.PostGetPayload<{
   include: typeof postInclude;

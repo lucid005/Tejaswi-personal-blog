@@ -62,7 +62,7 @@ function AuthCard({
   );
 }
 
-export default function ReaderAuthForms() {
+export default function ReaderAuthForms({ next }: { next: string }) {
   const [signupState, signupAction, isSigningUp] = useActionState(
     readerSignupAction,
     initialState,
@@ -80,6 +80,7 @@ export default function ReaderAuthForms() {
         description="Save pieces, react, and leave notes. Takes about 30 seconds."
       >
         <form action={signupAction} className="mt-6 grid gap-4">
+          <input name="next" type="hidden" value={next} />
           <label className={labelClass}>
             Name
             <input className={inputClass} name="name" required />
@@ -122,6 +123,7 @@ export default function ReaderAuthForms() {
         description="Pick up where you left off."
       >
         <form action={loginAction} className="mt-6 grid gap-4">
+          <input name="next" type="hidden" value={next} />
           <label className={labelClass}>
             Email
             <input

@@ -26,20 +26,25 @@ function getReactionType(value: string) {
   return ReactionType.LIKE;
 }
 
-async function getReaderOrRedirect() {
+/**
+ * Reading is free; only these actions ask for an account. When they do, carry
+ * the post the reader was on so signing in does not cost them their place.
+ */
+async function getReaderOrRedirect(slug: string) {
   const reader = await getCurrentReader();
 
   if (!reader) {
-    redirect("/login");
+    const next = slug ? `/blog/${slug}` : "/";
+    redirect(`/login?next=${encodeURIComponent(next)}`);
   }
 
   return reader;
 }
 
 export async function addCommentAction(formData: FormData) {
-  const reader = await getReaderOrRedirect();
-  const postId = getString(formData, "postId");
   const slug = getString(formData, "slug");
+  const reader = await getReaderOrRedirect(slug);
+  const postId = getString(formData, "postId");
   const content = getString(formData, "content");
   const parentId = getString(formData, "parentId");
 
@@ -47,51 +52,60 @@ export async function addCommentAction(formData: FormData) {
     return;
   }
 
+  // Status is left to the model's default of PENDING — nothing appears under
+  // Tejaswi's name until she approves it.
   await prisma.comment.create({
     data: {
       content,
       postId,
       userId: reader.id,
       parentId: parentId || null,
-      status: "APPROVED",
     },
   });
 
   revalidatePath(`/blog/${slug}`);
+  revalidatePath("/admin/comments");
 }
 
 export async function reactToPostAction(formData: FormData) {
-  const reader = await getReaderOrRedirect();
-  const postId = getString(formData, "postId");
   const slug = getString(formData, "slug");
+  const reader = await getReaderOrRedirect(slug);
+  const postId = getString(formData, "postId");
   const reactionType = getReactionType(getString(formData, "reactionType"));
 
   if (!postId || !slug) {
     return;
   }
 
-  await prisma.reaction.deleteMany({
-    where: {
-      postId,
-      userId: reader.id,
-    },
+  const existing = await prisma.reaction.findFirst({
+    where: { postId, userId: reader.id },
+    select: { id: true, type: true },
   });
 
-  await prisma.reaction.create({
-    data: {
-      postId,
-      userId: reader.id,
-      type: reactionType,
-    },
-  });
+  // Choosing the reaction you already hold clears it; choosing another
+  // replaces it. Either way a reader holds at most one.
+  if (existing) {
+    await prisma.reaction.delete({ where: { id: existing.id } });
+  }
+
+  if (!existing || existing.type !== reactionType) {
+    await prisma.reaction.create({
+      data: {
+        postId,
+        userId: reader.id,
+        type: reactionType,
+      },
+    });
+  }
 
   revalidatePath(`/blog/${slug}`);
+  revalidatePath("/login");
 }
 
 export async function savePostAction(formData: FormData) {
-  const reader = await getReaderOrRedirect();
-  const postId = getString(formData, "postId");
   const slug = getString(formData, "slug");
+  const reader = await getReaderOrRedirect(slug);
+  const postId = getString(formData, "postId");
 
   if (!postId || !slug) {
     return;
@@ -116,9 +130,9 @@ export async function savePostAction(formData: FormData) {
 }
 
 export async function unsavePostAction(formData: FormData) {
-  const reader = await getReaderOrRedirect();
-  const postId = getString(formData, "postId");
   const slug = getString(formData, "slug");
+  const reader = await getReaderOrRedirect(slug);
+  const postId = getString(formData, "postId");
 
   if (!postId || !slug) {
     return;
@@ -155,7 +169,6 @@ export async function trackReadingHistory(postId: string) {
     create: {
       postId,
       userId: reader.id,
-      progressPercent: 0,
     },
   });
 }
