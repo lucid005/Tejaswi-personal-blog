@@ -123,7 +123,7 @@ export default async function AdminCommentsPage() {
                       className="cursor-pointer border border-[#8a8277] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5f594f] transition hover:bg-[#5f594f] hover:text-[#fffdf9]"
                       type="submit"
                     >
-                      Unhide
+                      Return to queue
                     </button>
                   </form>
                 )}
