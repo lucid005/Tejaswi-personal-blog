@@ -136,7 +136,7 @@ export default function PostForm({
         description="Control whether the post appears publicly, when it appears, and how it is prioritized."
         title="Publishing"
       >
-        <div className="grid grid-cols-3 gap-4 max-[900px]:grid-cols-1">
+        <div className="grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
           <Label label="Status">
             <select
               className={inputClass}
@@ -157,14 +157,9 @@ export default function PostForm({
               name="publishedAt"
               type="datetime-local"
             />
-          </Label>
-          <Label label="Scheduled For">
-            <input
-              className={inputClass}
-              defaultValue={formatDateTimeLocal(post?.scheduledFor)}
-              name="scheduledFor"
-              type="datetime-local"
-            />
+            <span className="mt-2 block text-xs font-bold normal-case tracking-normal text-[#6f6962]">
+              Set a future date to schedule — the post stays hidden until then.
+            </span>
           </Label>
         </div>
         <div className="grid grid-cols-3 gap-4 max-[900px]:grid-cols-1">

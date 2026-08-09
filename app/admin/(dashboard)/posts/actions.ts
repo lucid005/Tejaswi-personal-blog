@@ -36,7 +36,6 @@ function getStatus(value: string) {
   if (
     value === PostStatus.DRAFT ||
     value === PostStatus.PUBLISHED ||
-    value === PostStatus.SCHEDULED ||
     value === PostStatus.ARCHIVED
   ) {
     return value;
@@ -63,7 +62,6 @@ async function buildPostData(formData: FormData) {
   const categoryId = getString(formData, "categoryId");
   const seriesId = getString(formData, "seriesId");
   const publishedAtInput = getDate(getString(formData, "publishedAt"));
-  const scheduledForInput = getDate(getString(formData, "scheduledFor"));
   const readingTimeMinutes = Math.max(
     1,
     Number.parseInt(getString(formData, "readingTimeMinutes") || "1", 10),
@@ -90,10 +88,10 @@ async function buildPostData(formData: FormData) {
       featured: getBoolean(formData, "featured"),
       pinned: getBoolean(formData, "pinned"),
       readingTimeMinutes,
+      // A future date here is how a post is scheduled: it stays invisible
+      // until the visibility filter's cutoff catches up with it.
       publishedAt:
         status === PostStatus.PUBLISHED ? publishedAtInput ?? new Date() : null,
-      scheduledFor:
-        status === PostStatus.SCHEDULED ? scheduledForInput ?? null : null,
       authorNote: getString(formData, "authorNote") || null,
       behindThePost: getString(formData, "behindThePost") || null,
       metaTitle: getString(formData, "metaTitle") || null,

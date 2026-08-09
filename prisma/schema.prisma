@@ -12,10 +12,11 @@ enum UserRole {
   ADMIN
 }
 
+// Scheduling is a PUBLISHED post with a future publishedAt — the public
+// visibility filter already honours it, so no separate state is needed.
 enum PostStatus {
   DRAFT
   PUBLISHED
-  SCHEDULED
   ARCHIVED
 }
 
@@ -72,7 +73,6 @@ model Post {
   pinned             Boolean          @default(false)
   readingTimeMinutes Int              @default(1)
   publishedAt        DateTime?
-  scheduledFor       DateTime?
   authorNote         String?
   behindThePost      String?
   metaTitle          String?
@@ -167,7 +167,8 @@ model Reaction {
   post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([postId, userId, type])
+  // One reaction per reader per post — choosing another replaces it.
+  @@unique([postId, userId])
   @@index([userId])
 }
 
